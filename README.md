@@ -1,4 +1,4 @@
-# vuecourse
+# Vue.js todo list trainee
 
 ## Project setup
 ```
