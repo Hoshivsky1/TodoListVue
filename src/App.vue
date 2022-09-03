@@ -1,19 +1,28 @@
 <template>
     <div class="app">
         <h1 style="font-size: 25px; font-weight:600">Cторінка з постами</h1>
-        <my-button
-            @click="showDialog"
-            style="margin: 15px 0px">
-            Створити пост
-        </my-button>
+        <div class="app__btns">
+            <my-button
+                @click="showDialog"
+            >
+                Створити пост
+            </my-button>
+            <my-select
+                v-model="selectedSort"
+                :options="sortOptions"
+            />
+        </div>
         <my-dialog v-model:show="dialogVisible">
             <post-form 
                 @create='createPost'
             />
         </my-dialog>
-        <post-list :posts="posts"
+        <post-list 
+            :posts="sortedPosts"
             @remove="removePost"
-        />  
+            v-if="!isPostsLoading"
+        />
+        <div v-else>Іде загрузка...</div>  
     </div>
 </template>
 
@@ -22,22 +31,28 @@ import PostForm from './components/PostForm';
 import PostList from '@/components/PostList';
 import MyDialog from './components/UI/MyDialog.vue';
 import MyButton from './components/UI/MyButton.vue';
+import axios from 'axios';
+import MySelect from './components/UI/MySelect.vue';
+
 export default {
     components: {
     PostList,
     PostForm,
     MyDialog,
-    MyButton
+    MyButton,
+    MySelect
 },
     data() {
         return {
-            posts: [
-                { id: 1, title: "Javascript", body: "Опис поста" },
-                { id: 2, title: "Javascript 2", body: "Опис поста 2" },
-                { id: 3, title: "Javascript 3", body: "Опис поста 3" },
-                { id: 4, title: "Javascript 3", body: "Опис поста 4" },
-            ],
-            dialogVisible: false
+            posts: [],
+            dialogVisible: false,
+            isPostsLoading: false,
+            selectedSort: '',
+            sortOptions: [
+                {value: 'title', name: 'По назві'},
+                {value: 'body', name: 'По опису'},
+
+            ]
         };
     },
     methods: {
@@ -50,8 +65,36 @@ export default {
         },
         showDialog() {
             this.dialogVisible = true;
+        },
+        async fetchPosts() {
+            try {
+                this.isPostsLoading = true;
+                const response = await axios.get('https://jsonplaceholder.typicode.com/posts?_limit=10');
+                this.posts = response.data;
+            } catch (e) {
+                alert('Помилка')
+            } finally {
+                this.isPostsLoading = false;
+            }
         }
     },
+    mounted() {
+        this.fetchPosts( )
+    },
+    computed: {
+        sortedPosts() {
+            return [...this.posts].sort((post1, post2) => {
+                return post1[this.selectedSort]?.localeCompare(post2[this.selectedSort])
+            })
+        }
+    },
+    watch: {
+        // selectedSort(newValue) {
+        //     this.posts.sort((post1, post2) => {
+        //         return post1[newValue]?.localeCompare(post2[newValue])
+        //     })
+        // }
+    }
 };
 </script>
 
@@ -133,5 +176,11 @@ h6 {
 
 .app {
     padding: 20px;
+}
+
+.app__btns {
+    margin: 15px 0px;
+    display: flex;
+    justify-content: space-between;
 }
 </style>
